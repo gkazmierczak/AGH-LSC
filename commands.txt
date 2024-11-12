@@ -1,0 +1,63 @@
+(base) Ξ lsc/lab5 → aws eks create-cluster --region us-east-1 --name lsc-cluster --kubernetes-version 1.30 \
+   --role-arn arn:aws:iam::851725344727:role/LabRole \
+   --resources-vpc-config subnetIds=subnet-081011dad422e3d56,subnet-03898755aaf550855
+
+(base) ↑255 lsc/lab5 → aws eks update-kubeconfig --region us-east-1 --name lsc-cluster
+Added new context arn:aws:eks:us-east-1:851725344727:cluster/lsc-cluster to /Users/gabrielkazmierczak/.kube/config
+
+(base) ↑130 lsc/lab5 → aws eks create-nodegroup \
+  --cluster-name lsc-cluster \
+  --nodegroup-name lsc-nodes \
+  --node-role arn:aws:iam::851725344727:role/LabRole \
+  --subnets=subnet-081011dad422e3d56 \
+  --scaling-config minSize=2,maxSize=5,desiredSize=3 \
+  --instance-types t2.micro \
+  --ami-type AL2_x86_64 \
+  --disk-size 20
+
+(base) ↑1 lsc/lab5 → helm repo add nfs-ganesha-server-and-external-provisioner https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner/
+"nfs-ganesha-server-and-external-provisioner" has been added to your repositories
+(base) Ξ lsc/lab5 → helm install nfs-server-provisioner nfs-ganesha-server-and-external-provisioner/nfs-server-provisioner -f values.yaml
+NAME: nfs-server-provisioner
+LAST DEPLOYED: Tue Nov 12 18:19:32 2024
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+The NFS Provisioner service has now been installed.
+
+A storage class named 'my-nfs' has now been created
+and is available to provision dynamic volumes.
+
+You can use this storageclass by creating a `PersistentVolumeClaim` with the
+correct storageClassName attribute. For example:
+
+    ---
+    kind: PersistentVolumeClaim
+    apiVersion: v1
+    metadata:
+      name: test-dynamic-volume-claim
+    spec:
+      storageClassName: "my-nfs"
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Mi
+
+(base) Ξ lsc/lab5 → kubectl apply -f pvc.yaml
+persistentvolumeclaim/nfs-pvc created
+
+(base) Ξ lsc/lab5 → kubectl apply -f http-deployment.yaml
+deployment.apps/web-server created
+
+(base) Ξ lsc/lab5 → kubectl apply -f service.yaml
+service/web-server-service created
+
+(base) ↑1 lsc/lab5 → kubectl apply -f populate-job.yaml
+job.batch/populate-content created
+
+(base) Ξ lsc/lab5 → kubectl get services web-server-service
+NAME                 TYPE           CLUSTER-IP       EXTERNAL-IP                                                              PORT(S)        AGE
+web-server-service   LoadBalancer   10.100.175.205   a194e93da2c274813b7eb6ba8a7a2e73-522756841.us-east-1.elb.amazonaws.com   80:31914/TCP   74s

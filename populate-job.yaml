@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: populate-content
+spec:
+  template:
+    spec:
+      containers:
+        - name: content-populator
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args:
+            [
+              "echo '<html><body><h1>Hello world!</h1></body></html>' > /mnt/nfs/index.html",
+            ]
+          volumeMounts:
+            - name: content
+              mountPath: /mnt/nfs
+      restartPolicy: OnFailure
+      volumes:
+        - name: content
+          persistentVolumeClaim:
+            claimName: nfs-pvc
